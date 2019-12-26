@@ -1,10 +1,9 @@
 from __future__ import division, print_function
 import math
 from sklearn import datasets
-import numpy as np
-
-from mlfromscratch.utils import normalize, euclidean_distance, calculate_covariance_matrix
-from mlfromscratch.utils import Plot
+from mxnet import np
+from DeepNumpy_mlfromscratch.utils import normalize, euclidean_distance, calculate_covariance_matrix
+from DeepNumpy_mlfromscratch.utils import Plot
 
 
 class GaussianMixtureModel():
@@ -37,8 +36,7 @@ class GaussianMixtureModel():
         self.priors = (1 / self.k) * np.ones(self.k)
         for i in range(self.k):
             params = {}
-            a = np.random.choice(range(n_samples))
-            params["mean"] = X[a]
+            params["mean"] = X[int(np.random.choice(n_samples))] # Modified here int(array(x)) for indexing purpose
             params["cov"] = calculate_covariance_matrix(X)
             self.parameters.append(params)
 
@@ -48,7 +46,6 @@ class GaussianMixtureModel():
         n_features = np.shape(X)[1]
         mean = params["mean"]
         covar = params["cov"]
-        #print("covariance matrix :", covar)
         determinant = np.linalg.det(covar)
         #print("determinant of cov: ", determinant)
         likelihoods = np.zeros(np.shape(X)[0])
@@ -60,13 +57,15 @@ class GaussianMixtureModel():
             x = np.linalg.inv(covar) # change from pinv to inv
             y = sample - mean
             z = w.dot(x).dot(y)
+            #exponent = math.exp(-0.5 * (sample - mean).T.dot(np.linalg.pinv(covar)).dot((sample - mean)))
             exponent = math.exp(z)
             likelihoods[i] = coeff * exponent
         return likelihoods
-    
+
     @profile
     def _get_likelihoods(self, X):
         """ Calculate the likelihood over all samples """
+        #X = X.astype('float32')
         n_samples = np.shape(X)[0]
         likelihoods = np.zeros((n_samples, self.k))
         for i in range(self.k):
@@ -94,6 +93,7 @@ class GaussianMixtureModel():
     def _maximization(self, X):
         """ Update the parameters and priors """
         # Iterate through clusters and recalculate mean and covariance
+        #X = X.astype("float32")
         for i in range(self.k):
             resp = np.expand_dims(self.responsibility[:, i], axis=1)
             a = (resp * X).sum(axis=0)
